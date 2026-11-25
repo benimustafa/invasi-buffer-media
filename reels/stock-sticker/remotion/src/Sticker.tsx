@@ -1,59 +1,47 @@
 import React from "react";
 import {AbsoluteFill, Img, staticFile, useCurrentFrame, useVideoConfig, spring, interpolate} from "remotion";
-// Video stok "sticker pop" (ref Bistro): parade 1 elemen di tengah sesuai ketukan -> kolase -> ending CTA.
-const PAPER = "#efebdf", INK = "#2b2a14";
+// v2 (Beni 25 Nov): ikut ref Bistro — stiker KECIL muncul satu per satu menyebar & menumpuk,
+// tanpa teks di awal. Ending: stiker hilang -> BG digelapkan -> teks saja (tanpa frame), mini & luxury, putih + kuning.
+const WHITE = "#fbf8ef", GOLD = "#f2d27a";
 const css = `
 @font-face{font-family:'Plex';font-weight:400;src:url(${staticFile("fonts/IBMPlexMono-Regular.ttf")});}
-@font-face{font-family:'Plex';font-weight:500;src:url(${staticFile("fonts/IBMPlexMono-Medium.ttf")});}
 @font-face{font-family:'ISerif';src:url(${staticFile("fonts/InstrumentSerif-Regular.ttf")});}`;
-const mono = (size: number, ls: number, color: string, weight = 400): React.CSSProperties => ({fontFamily: "Plex, monospace", fontWeight: weight, fontSize: size, letterSpacing: ls, color, whiteSpace: "pre"});
-export type StickerProps = {
-  bg: string; items: string[]; name: string; meta: string;
-  ctaTitle: string; ctaLines: string[]; ctaPill: string;
-  beat: number; // frame per ketukan parade (8 = 0,27 dtk di 30fps ~ setengah ketukan 112 BPM)
-};
-// posisi kolase (x,y pusat, skala, rotasi) untuk 1080x1920
-const SPOTS: [number, number, number, number][] = [
-  [250, 560, 0.62, -8], [790, 520, 0.6, 7], [540, 820, 0.66, -3], [230, 1080, 0.58, 9], [830, 1040, 0.6, -10],
-  [520, 1300, 0.62, 5], [210, 1500, 0.55, -6], [850, 1460, 0.56, 8], [560, 1700, 0.5, -9], [260, 1790, 0.42, 12], [830, 1780, 0.42, -12],
+const mono = (size: number, ls: number, color: string): React.CSSProperties => ({fontFamily: "Plex, monospace", fontSize: size, letterSpacing: ls, color, whiteSpace: "pre"});
+export type StickerProps = {bg: string; items: string[]; name: string; meta: string; ctaLines: string[]; beat: number};
+// posisi tersebar (x,y pusat, lebar px, rotasi) — kecil, seperti ref
+export const SPOTS: [number, number, number, number][] = [
+  [300, 560, 220, -6], [790, 470, 210, 8], [540, 820, 230, -3], [210, 1010, 200, 10], [860, 900, 215, -9],
+  [560, 1170, 210, 6], [250, 1380, 220, -8], [840, 1300, 200, 7], [520, 1560, 225, -5], [850, 1680, 200, 11],
+  [220, 1730, 205, -11], [560, 300, 195, 6], [210, 230, 190, -7], [880, 180, 185, 4],
 ];
-export const StickerReel: React.FC<StickerProps> = ({bg, items, name, meta, ctaTitle, ctaLines, ctaPill, beat}) => {
+export const timing = (beat: number) => {
+  const inStart = 8, inEnd = inStart + SPOTS.length * beat, hold = inEnd + 18;
+  const outEnd = hold + 14, textIn = outEnd + 4;
+  return {inStart, inEnd, hold, outEnd, textIn, total: textIn + 100};
+};
+export const StickerReel: React.FC<StickerProps> = ({bg, items, name, meta, ctaLines, beat}) => {
   const f = useCurrentFrame(); const {fps, durationInFrames} = useVideoConfig();
-  const start1 = 6; const end1 = start1 + items.length * beat;            // parade
-  const gap2 = Math.round(beat * 0.75); const end2 = end1 + items.length * gap2 + 10; // kolase
-  const ctaIn = spring({frame: f - end2, fps, config: {damping: 15, stiffness: 110}});
-  const pop = (t: number) => spring({frame: t, fps, config: {damping: 9, stiffness: 220, mass: 0.6}});
-  const titleIn = interpolate(f, [0, 8], [0, 1], {extrapolateRight: "clamp"});
-  return (<AbsoluteFill style={{background: INK, overflow: "hidden"}}>
+  const T = timing(beat);
+  const pop = (t: number) => spring({frame: t, fps, config: {damping: 10, stiffness: 240, mass: 0.5}});
+  const dark = interpolate(f, [T.hold, T.textIn], [0.12, 0.5], {extrapolateLeft: "clamp", extrapolateRight: "clamp"});
+  const tIn = (d: number) => interpolate(f, [T.textIn + d, T.textIn + d + 14], [0, 1], {extrapolateLeft: "clamp", extrapolateRight: "clamp"});
+  const rise = (d: number) => (1 - tIn(d)) * 18;
+  return (<AbsoluteFill style={{background: "#111", overflow: "hidden"}}>
     <style>{css}</style>
-    <Img src={staticFile(bg)} style={{position: "absolute", inset: 0, width: 1080, height: 1920, objectFit: "cover", filter: "blur(3px)", transform: `scale(${1.04 + 0.03 * (f / durationInFrames)})`}} />
-    <AbsoluteFill style={{background: "rgba(20,18,10,0.18)"}} />
-    {/* parade */}
-    {f >= start1 && f < end1 && (() => {
-      const i = Math.floor((f - start1) / beat); const local = (f - start1) % beat; const s = pop(local);
-      return <Img src={staticFile(`set/${items[i]}`)} style={{position: "absolute", left: 540, top: 960, width: 720, transform: `translate(-50%,-50%) scale(${0.55 + 0.45 * s}) rotate(${i % 2 ? 4 : -4}deg)`}} />;
-    })()}
-    {/* kolase */}
-    {f >= end1 && items.map((it, i) => {
-      const t = f - end1 - i * gap2; if (t < 0) return null;
-      const [x, y, sc, r] = SPOTS[i % SPOTS.length]; const s = pop(t);
-      const out = interpolate(ctaIn, [0, 1], [1, 0.82]);
-      return <Img key={i} src={staticFile(`set/${it}`)} style={{position: "absolute", left: x, top: y - ctaIn * 60, width: 560 * sc, transform: `translate(-50%,-50%) scale(${s * out}) rotate(${r}deg)`, opacity: 1 - ctaIn * 0.35}} />;
+    <Img src={staticFile(bg)} style={{position: "absolute", inset: 0, width: 1080, height: 1920, objectFit: "cover", transform: `scale(${1.03 + 0.03 * (f / durationInFrames)})`}} />
+    <AbsoluteFill style={{background: `rgba(0,0,0,${dark})`}} />
+    {f < T.outEnd && SPOTS.map(([x, y, w, r], i) => {
+      const t = f - T.inStart - i * beat; if (t < 0) return null;
+      const out = interpolate(f, [T.hold + (i % 5) * 2, T.hold + (i % 5) * 2 + 6], [1, 0], {extrapolateLeft: "clamp", extrapolateRight: "clamp"});
+      return <Img key={i} src={staticFile(`set/${items[i % items.length]}`)} style={{position: "absolute", left: x, top: y, width: w, transform: `translate(-50%,-50%) scale(${pop(t) * out}) rotate(${r}deg)`}} />;
     })}
-    {/* nama koleksi (font template Figma) */}
-    {f < end2 + 4 && <div style={{position: "absolute", left: 60, right: 60, top: 120, textAlign: "center", opacity: titleIn}}>
-      <div style={{display: "inline-block", background: PAPER, borderRadius: 10, padding: "18px 34px 10px", boxShadow: "0 8px 24px rgba(0,0,0,.25)"}}>
-        <div style={{fontFamily: "ISerif", fontSize: 92, lineHeight: "84px", color: INK, whiteSpace: "pre"}}>{name}</div>
-        <div style={{...mono(22, 3, INK), marginTop: 10}}>{meta}</div>
-      </div>
-    </div>}
-    {/* ending CTA */}
-    {f >= end2 && <div style={{position: "absolute", left: 70, right: 70, top: 1920 - ctaIn * 1060, height: 900, background: PAPER, borderRadius: 18, boxShadow: "0 -10px 40px rgba(0,0,0,.3)", textAlign: "center"}}>
-      <div style={{...mono(18, 2, INK), marginTop: 40}}>INVASI STUDIO · @INVASISTUDIO</div>
-      <div style={{fontFamily: "ISerif", fontSize: 104, lineHeight: "96px", color: INK, marginTop: 40, whiteSpace: "pre"}}>{ctaTitle}</div>
-      <div style={{marginTop: 46}}>{ctaLines.map((l, i) => <div key={i} style={{...mono(28, 1.5, INK), lineHeight: "44px"}}>{l}</div>)}</div>
-      <div style={{display: "inline-block", marginTop: 48, background: INK, color: PAPER, borderRadius: 30, padding: "16px 40px", ...mono(26, 2, PAPER, 500)}}>{ctaPill}</div>
+    {f >= T.textIn && <div style={{position: "absolute", left: 0, right: 0, top: 760, textAlign: "center"}}>
+      <div style={{...mono(18, 6, GOLD), opacity: tIn(0), transform: `translateY(${rise(0)}px)`}}>INVASI STUDIO</div>
+      <div style={{fontFamily: "ISerif", fontSize: 88, lineHeight: "82px", color: WHITE, whiteSpace: "pre", marginTop: 28, opacity: tIn(4), transform: `translateY(${rise(4)}px)`}}>{name}</div>
+      <div style={{...mono(17, 4, WHITE), marginTop: 26, opacity: 0.85 * tIn(8)}}>{meta}</div>
+      <div style={{width: 60, height: 1, background: GOLD, margin: "44px auto", opacity: tIn(14)}} />
+      {ctaLines.map((l, i) => <div key={i} style={{...mono(22, 2, i % 2 ? GOLD : WHITE), lineHeight: "40px", opacity: tIn(18 + i * 3), transform: `translateY(${rise(18 + i * 3)}px)`}}>{l}</div>)}
     </div>}
   </AbsoluteFill>);
 };
-export const lengthFor = (n: number, beat: number) => 6 + n * beat + n * Math.round(beat * 0.75) + 10 + 75;
+export const lengthFor = (beat: number) => timing(beat).total;
