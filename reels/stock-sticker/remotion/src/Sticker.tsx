@@ -1,5 +1,5 @@
 import React from "react";
-import {AbsoluteFill, Img, staticFile, useCurrentFrame, useVideoConfig, spring, interpolate} from "remotion";
+import {AbsoluteFill, Img, Audio, staticFile, useCurrentFrame, useVideoConfig, spring, interpolate} from "remotion";
 // v2 (Beni 25 Nov): ikut ref Bistro — stiker KECIL muncul satu per satu menyebar & menumpuk,
 // tanpa teks di awal. Ending: stiker hilang -> BG digelapkan -> teks saja (tanpa frame), mini & luxury, putih + kuning.
 const WHITE = "#fbf8ef", GOLD = "#f2d27a";
@@ -7,27 +7,28 @@ const css = `
 @font-face{font-family:'Plex';font-weight:400;src:url(${staticFile("fonts/IBMPlexMono-Regular.ttf")});}
 @font-face{font-family:'ISerif';src:url(${staticFile("fonts/InstrumentSerif-Regular.ttf")});}`;
 const mono = (size: number, ls: number, color: string): React.CSSProperties => ({fontFamily: "Plex, monospace", fontSize: size, letterSpacing: ls, color, whiteSpace: "pre"});
-export type StickerProps = {bg: string; items: string[]; name: string; meta: string; ctaLines: string[]; beat: number};
+export type StickerProps = {bg: string; items: string[]; name: string; meta: string; ctaLines: string[]; beat: number; music?: string; firstBeat?: number};
 // posisi tersebar (x,y pusat, lebar px, rotasi) — kecil, seperti ref
 export const SPOTS: [number, number, number, number][] = [
   [300, 560, 220, -6], [790, 470, 210, 8], [540, 820, 230, -3], [210, 1010, 200, 10], [860, 900, 215, -9],
   [560, 1170, 210, 6], [250, 1380, 220, -8], [840, 1300, 200, 7], [520, 1560, 225, -5], [850, 1680, 200, 11],
   [220, 1730, 205, -11], [560, 300, 195, 6], [210, 230, 190, -7], [880, 180, 185, 4],
 ];
-export const timing = (beat: number) => {
-  const inStart = 8, inEnd = inStart + SPOTS.length * beat, hold = inEnd + 18;
+export const timing = (beat: number, firstBeat = 8) => {
+  const inStart = firstBeat, inEnd = inStart + SPOTS.length * beat, hold = inEnd + 18;
   const outEnd = hold + 14, textIn = outEnd + 4;
-  return {inStart, inEnd, hold, outEnd, textIn, total: textIn + 100};
+  return {inStart, inEnd, hold, outEnd, textIn, total: Math.ceil(textIn + 100)};
 };
-export const StickerReel: React.FC<StickerProps> = ({bg, items, name, meta, ctaLines, beat}) => {
+export const StickerReel: React.FC<StickerProps> = ({bg, items, name, meta, ctaLines, beat, music, firstBeat}) => {
   const f = useCurrentFrame(); const {fps, durationInFrames} = useVideoConfig();
-  const T = timing(beat);
+  const T = timing(beat, firstBeat);
   const pop = (t: number) => spring({frame: t, fps, config: {damping: 10, stiffness: 240, mass: 0.5}});
   const dark = interpolate(f, [T.hold, T.textIn], [0.12, 0.5], {extrapolateLeft: "clamp", extrapolateRight: "clamp"});
   const tIn = (d: number) => interpolate(f, [T.textIn + d, T.textIn + d + 14], [0, 1], {extrapolateLeft: "clamp", extrapolateRight: "clamp"});
   const rise = (d: number) => (1 - tIn(d)) * 18;
   return (<AbsoluteFill style={{background: "#111", overflow: "hidden"}}>
     <style>{css}</style>
+    {music && <Audio src={staticFile(music)} volume={(fr) => interpolate(fr, [durationInFrames - 20, durationInFrames], [1, 0], {extrapolateLeft: "clamp", extrapolateRight: "clamp"})} />}
     <Img src={staticFile(bg)} style={{position: "absolute", inset: 0, width: 1080, height: 1920, objectFit: "cover", transform: `scale(${1.03 + 0.03 * (f / durationInFrames)})`}} />
     <AbsoluteFill style={{background: `rgba(0,0,0,${dark})`}} />
     {f < T.outEnd && SPOTS.map(([x, y, w, r], i) => {
@@ -44,4 +45,4 @@ export const StickerReel: React.FC<StickerProps> = ({bg, items, name, meta, ctaL
     </div>}
   </AbsoluteFill>);
 };
-export const lengthFor = (beat: number) => timing(beat).total;
+export const lengthFor = (beat: number, firstBeat?: number) => timing(beat, firstBeat).total;
