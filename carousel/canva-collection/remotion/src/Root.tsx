@@ -6,7 +6,7 @@ const DATA: CoverProps = {
   headline: "CAFE TEMPLATES,\nREADY TO EDIT.",
   sub: "MENUS, PROMOS, HIRING POSTS + MORE",
   pill: "SWIPE TO SEE THE SET  →",
-  lists: [["menu.jpg", "newproduct.jpg", "wallpaper.jpg"], ["promo.jpg", "brewing.jpg", "cafepromo.jpg"], ["hiring.jpg", "opening.jpg", "monday.jpg"]],
+  lists: [["menu.jpg", "opening.jpg", "promo.jpg", "hiring.jpg"], ["promo.jpg", "hiring.jpg", "opening.jpg", "menu.jpg"], ["hiring.jpg", "menu.jpg", "opening.jpg", "promo.jpg"]],
 };
 export const Root: React.FC = () => (<>
   <Composition id="c-cover" component={CCover} durationInFrames={150} fps={30} width={1080} height={1350} defaultProps={{...DATA, motion: true}} />
