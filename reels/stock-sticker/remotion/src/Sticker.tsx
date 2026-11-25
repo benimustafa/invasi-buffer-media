@@ -35,12 +35,12 @@ export const StickerReel: React.FC<StickerProps> = ({bg, items, name, meta, ctaL
       const out = interpolate(f, [T.hold + (i % 5) * 2, T.hold + (i % 5) * 2 + 6], [1, 0], {extrapolateLeft: "clamp", extrapolateRight: "clamp"});
       return <Img key={i} src={staticFile(`set/${items[i % items.length]}`)} style={{position: "absolute", left: x, top: y, width: w, transform: `translate(-50%,-50%) scale(${pop(t) * out}) rotate(${r}deg)`}} />;
     })}
-    {f >= T.textIn && <div style={{position: "absolute", left: 0, right: 0, top: 760, textAlign: "center"}}>
-      <div style={{...mono(18, 6, GOLD), opacity: tIn(0), transform: `translateY(${rise(0)}px)`}}>INVASI STUDIO</div>
-      <div style={{fontFamily: "ISerif", fontSize: 88, lineHeight: "82px", color: WHITE, whiteSpace: "pre", marginTop: 28, opacity: tIn(4), transform: `translateY(${rise(4)}px)`}}>{name}</div>
-      <div style={{...mono(17, 4, WHITE), marginTop: 26, opacity: 0.85 * tIn(8)}}>{meta}</div>
-      <div style={{width: 60, height: 1, background: GOLD, margin: "44px auto", opacity: tIn(14)}} />
-      {ctaLines.map((l, i) => <div key={i} style={{...mono(22, 2, i % 2 ? GOLD : WHITE), lineHeight: "40px", opacity: tIn(18 + i * 3), transform: `translateY(${rise(18 + i * 3)}px)`}}>{l}</div>)}
+    {f >= T.textIn && <div style={{position: "absolute", left: 100, right: 100, top: 225, height: 1365, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center"}}>
+      <div style={{...mono(32, 12, GOLD), opacity: tIn(0), transform: `translateY(${rise(0)}px)`}}>INVASI STUDIO</div>
+      <div style={{fontFamily: "ISerif", fontSize: 180, lineHeight: "166px", color: WHITE, whiteSpace: "pre", marginTop: 52, opacity: tIn(4), transform: `translateY(${rise(4)}px)`}}>{name}</div>
+      <div style={{...mono(28, 6, WHITE), marginTop: 48, opacity: 0.85 * tIn(8)}}>{meta}</div>
+      <div style={{width: 120, height: 2, background: GOLD, margin: "90px auto", opacity: tIn(14)}} />
+      {ctaLines.map((l, i) => <div key={i} style={{...mono(36, 2, i % 2 ? GOLD : WHITE), lineHeight: "70px", opacity: tIn(18 + i * 3), transform: `translateY(${rise(18 + i * 3)}px)`}}>{l}</div>)}
     </div>}
   </AbsoluteFill>);
 };
