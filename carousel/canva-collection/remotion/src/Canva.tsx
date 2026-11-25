@@ -34,7 +34,7 @@ export const CCover: React.FC<CoverProps> = ({motion = true, headline, sub, pill
       {pos.map((p, i) => {
         const s = motion ? spring({frame: fr - 10 - i * 14, fps, config: {damping: 16, stiffness: 90}}) : 1;
         const drift = motion ? Math.sin((fr + i * 20) / 38) * 5 : 0;
-        return <Show key={i} list={lists[i]} start={0} period={50 + i * 6} style={{position: "absolute", left: p[0], top: p[1] + (1 - s) * 140 + drift, width: 420, height: 525, boxSizing: "border-box", border: "8px solid #fff", borderRadius: 6, opacity: s}} />;
+        return <Show key={i} list={lists[i]} start={0} period={60} style={{position: "absolute", left: p[0], top: p[1] + (1 - s) * 140 + drift, width: 420, height: 525, boxSizing: "border-box", border: "8px solid #fff", borderRadius: 6, opacity: s}} />;
       })}
     </div>
     <div style={{position: "absolute", left: 140, top: 1144, width: 800, textAlign: "center", ...mono(24, 3, 32, INK), opacity: fadeIn}}>{sub}</div>
